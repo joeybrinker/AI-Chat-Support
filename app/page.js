@@ -14,24 +14,49 @@ export default function Home() {
     },
   ])
   
+  const [message, setMessage] = useState('')
+
   const sendMessage = async () => { 
     setMessage('')
-    setMessages((messages) => [...messages, { role: 'user', content: message }])
+    setMessages((messages) => [
+      ...messages, 
+      { role: 'user', content: message },
+      {role: 'assistant', content:''},
+    ])
     const response = await fetch('/api/chat', {
-      method: 'POST',
+      method: "POST",
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify([...messages, { role: 'user', content: message }]),
-    })
-    const data = await response.json()
-    setMessages((messages) => [...messages, { role: 'assistant', content: data.message }])
-  }
+    }).then(async (res) => {
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
 
-  const [message, setMessage] = useState('')
+      let result = ''
+      return reader.read().then(function processText({ done, value }) {
+        if (done) {
+          return result
+        }
+        const text = decoder.decode(value || new Int8Array(), { stream: true })
+        setMessages((messages)=>{
+          let lastMessage = messages[messages.length - 1]
+          let otherMessages = messages.slice(0, messages.length - 1)
+          return [
+            ...otherMessages,
+            {
+              ...lastMessage,
+              content: lastMessage.content + text,
+            },
+          ]
+        })
+        return reader.read().then(processText)
+      })
+    })
+  }
 
   return (
   <Box
-    width="100%"
-    height="100%"
+    width="100vw"
+    height="100vh"
     display="flex"
     flexDirection="column"
     justifyContent="center"
@@ -39,10 +64,10 @@ export default function Home() {
     >
       <Stack 
         direction={"column"} 
-        width = "500px" 
+        width = "600px" 
         height={"700px"} 
         border= "1px solid black" 
-        p={3}
+        p={2}
         spacing={2} 
       >
         <Stack direction={"column"} spacing={2} flexGrow={1} overflow= "auto" maxHeight={"100%"}>
@@ -57,7 +82,7 @@ export default function Home() {
                     bgcolor={message.role === 'assistant' ? 'primary.main' : 'secondary.main'}
                     color={message.role === 'assistant' ? 'primary.contrastText' : 'secondary.contrastText'}
                     borderRadius={16}
-                    p={2}
+                    p={3}
                   >
                       {message.content}
                   </Box>
