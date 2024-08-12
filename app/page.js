@@ -94,6 +94,7 @@ export default function Home() {
         p={2}
         spacing={2} 
         bgcolor={"#0e5d24"}
+        borderRadius={4}
       >
         <Stack direction={"column"} spacing={2} flexGrow={1} overflow= "auto" maxHeight={"100%"}>
           {
